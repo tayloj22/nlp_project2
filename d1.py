@@ -72,12 +72,28 @@ def bigramMLE(bigram, corpus):
             if(bigram == (' '.join([corpus[i][j], corpus[i][j+1]]))):
                 #Increment phraseCount each time the phrase is found in corpus
                 phraseCount += 1
-    print(totalCount)
-    print(phraseCount)
     bigramProb = phraseCount/totalCount
     
     return bigramProb
-            
+
+#Function to build our model with probabilities of each bigram
+def bigramModel(corpus):
+    model = []
+    inModel = False
+    #First, go through and build a list of our possible bigrams
+    for i in range(len(corpus)):
+        for j in range(len(corpus[i])-1):
+            tempPhrase = ' '.join([corpus[i][j], corpus[i][j+1]])
+            #check that our model isn't empty so it doesn't go out of bounds
+            if model:
+                for k in range(len(model)):
+                    if (tempPhrase == model[k][0]):
+                        inModel = True
+            #If our word isn't in our model yet, we can first calculate it's MLE and then add it
+            if not inModel:
+                tempProb = bigramMLE(tempPhrase, corpus)
+                model.append((tempPhrase, tempProb))
+    return model
 
 
 
@@ -90,7 +106,7 @@ if __name__ == "__main__":
     #Calls upon parseCorpus to extract the words from the corpus
     corpus = parseCorpus(corpusFile)
     print(corpus)
-    print(unigramModel(corpus))
+    print(bigramModel(corpus))
 #    print("Type 1 for unigram probability, or type 2 for bigram probability.")
 #    gramVal = input()
 #
