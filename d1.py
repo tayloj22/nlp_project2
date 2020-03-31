@@ -21,24 +21,29 @@ def parseCorpus(corpusFile):
     #Return the 2d array which will be used as our corpus
     return lines
 
-def vocabLength(corpus):
-    model = []
-    vocabCount = 0
-    #Create list of all unigrams
+def uniVocab(corpus):
+    vocab = []
+    
     for i in range(len(corpus)):
         for j in range(len(corpus[i])):
-            tempWord = corpus[i][j]
-            inModel = False
-            #check that our model isn't empty so it doesn't go out of bounds
-            if model:
-                for k in range(len(model)):
-                    if (tempWord == model[k][0]):
-                        inModel = True
-            #If our word isn't in our model yet, add one to the vocab count and append the new word
-            if not inModel:
-                vocabCount += 1
-                model.append(tempWord)
-    return vocabCount
+            if corpus[i][j] not in vocab:
+                vocab.append(corpus[i][j])
+    
+    #Return the list of unique words
+    return vocab
+    
+def biVocab(corpus):
+    #Initialize the list
+    vocab = []
+    
+    #Parse through the corpus, adding any unique phrases to the vocab
+    for i in range(len(corpus)):
+        for j in range(len(corpus[i]) - 1):
+            if (' '.join([corpus[i][j], corpus[i][j+1]]) not in vocab):
+                vocab.append(' '.join([corpus[i][j], corpus[i][j+1]]))
+    
+    #Return the list of unique phrases
+    return vocab
     
     
 
@@ -153,7 +158,11 @@ if __name__ == "__main__":
     #print(corpus)
     
     #Find vocabulary size
-    vocabSize = vocabLength(corpus)
+    unigramVocab = uniVocab(corpus)
+    bigramVocab = biVocab(corpus)
+    #Use these vocabularies to generate values for V
+    uniVocabSize = len(unigramVocab)
+    biVocabSize = len(bigramVocab)
     
     #Ask user if they would like to use a unigram or a bigram
     print('Type 1 for unigram probability, or type 2 for bigram probability.')
@@ -164,8 +173,8 @@ if __name__ == "__main__":
     smoothVal = int(input())
     
     #Create a model for unigrams and bigrams
-    uniModel = unigramModel(corpus, smoothVal, vocabSize)
-    biModel = bigramModel(corpus, smoothVal, vocabSize)
+    uniModel = unigramModel(corpus, smoothVal, uniVocabSize)
+    biModel = bigramModel(corpus, smoothVal, biVocabSize)
     
     #Directs the program to the unigramMLE calculation
     if (gramVal == '1'):
@@ -176,7 +185,7 @@ if __name__ == "__main__":
         unigram = unigram.strip()
 
         #Call on unigramMLE function
-        unigramProb = unigramMLE(unigram, corpus, smoothVal, vocabSize)
+        unigramProb = unigramMLE(unigram, corpus, smoothVal, uniVocabSize)
         print ('The unigram probability estimate is', unigramProb)
 
     #Directs the program to the bigramMLE calculation
@@ -188,7 +197,7 @@ if __name__ == "__main__":
         bigram = bigram.strip('\n')
 
         #Call on bigramMLE function
-        bigramProb = bigramMLE(bigram, corpus, smoothVal, vocabSize)
+        bigramProb = bigramMLE(bigram, corpus, smoothVal, biVocabSize)
         print ('The bigram probability estimate is', bigramProb)
 
 
