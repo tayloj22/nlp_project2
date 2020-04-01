@@ -1,5 +1,6 @@
 import sys
 import os
+import math
 
 def parseCorpus(corpusFile):
     #Initialize an array for the data
@@ -15,8 +16,15 @@ def parseCorpus(corpusFile):
     #Remove undesired characters
     for i in range(len(lines)):
         for j in range(len(lines[i])):
+            lines[i][j] = lines[i][j].lower()
             lines[i][j] = lines[i][j].strip('\n')
+            lines[i][j] = lines[i][j].strip(')')
+            lines[i][j] = lines[i][j].strip('(')
+            lines[i][j] = lines[i][j].strip(':')
+            lines[i][j] = lines[i][j].strip(';')
             lines[i][j] = lines[i][j].strip(' ')
+            lines[i][j] = lines[i][j].strip('\"')
+            lines[i][j] = lines[i][j].strip('\'')
     
     #Return the 2d array which will be used as our corpus
     return lines
@@ -75,26 +83,7 @@ def unigramMLE(unigram, corpus, smoothVal, vocabLength):
     
     #Return the probability
     return unigramProb
-
-#Function to build our model with probabilities of each unigram
-def unigramModel(corpus, smoothVal, vocabLength):
-    model = []
-    #First, go through and build a list of our possible unigrams
-    for i in range(len(corpus)):
-        for j in range(len(corpus[i])):
-            tempWord = corpus[i][j]
-            inModel = False
-            #check that our model isn't empty so it doesn't go out of bounds
-            if model:
-                for k in range(len(model)):
-                    if (tempWord == model[k][0]):
-                        inModel = True
-            #If our word isn't in our model yet, we can first calculate it's MLE and then add it
-            if not inModel:
-                tempProb = unigramMLE(tempWord, corpus, smoothVal, vocabLength)
-                model.append((tempWord, tempProb))
-    return model
-                
+   
                     
             
 #Function that calculate MLE for a bigram
@@ -126,27 +115,35 @@ def bigramMLE(bigram, corpus, smoothVal, vocabLength):
     #Return the probability
     return bigramProb
 
-#Function to build our model with probabilities of each bigram
-def bigramModel(corpus, smoothVal, vocabLength):
-    model = []
-    #First, go through and build a list of our possible bigrams
-    for i in range(len(corpus)):
-        for j in range(len(corpus[i])-1):
-            tempPhrase = ' '.join([corpus[i][j], corpus[i][j+1]])
-            inModel = False
-            #check that our model isn't empty so it doesn't go out of bounds
-            if model:
-                for k in range(len(model)):
-                    if (tempPhrase == model[k][0]):
-                        inModel = True
-            #If our word isn't in our model yet, we can first calculate it's MLE and then add it
-            if not inModel:
-                tempProb = bigramMLE(tempPhrase, corpus, smoothVal, vocabLength)
-                model.append((tempPhrase, tempProb))
-    return model
+#Calculate perplexity of given testset using unigram model
+def uniPerplexity(uniModel, testset, corpus):
+    probabilities = []
+    parsedTest = parseCorpus(testset)
+    for row in range(len(parsedTest)):
+        for word in range(len(parsedTest[row])):
+            probabilities.append(unigramMLE(parsedTest[row][word], corpus, 1, 0))
+    pp = 1
+    
+    for probability in probabilities:
+        pp *= (1/probability)
+    return math.pow(pp, 1/(len(probabilities)))
+        
+        
 
-
-
+def biPerplexity(biModel, testset, corpus):
+    probabilities = []
+    parsedTest = parseCorpus(testset)
+    #print(parsedTest)
+    for row in range(len(parsedTest)):
+        for word in range(len(parsedTest[row])-1):
+            #print(word)
+            #print(row)
+            probabilities.append(bigramMLE(' '.join([parsedTest[row][word], parsedTest[row][word+1]]), corpus, 1, 0))
+    pp = 1
+    
+    for probability in probabilities:
+        pp*=(1/probability)
+    return math.pow(pp, 1/(len(probabilities)+1))
 
 
 if __name__ == "__main__":
@@ -155,52 +152,54 @@ if __name__ == "__main__":
     corpusFile = input()
     #Calls upon parseCorpus to extract the words from the corpus
     corpus = parseCorpus(corpusFile)
-    #print(corpus)
+    print("parsed corpus")
     
     #Find vocabulary size
     unigramVocab = uniVocab(corpus)
+    print("unigram model created")
     bigramVocab = biVocab(corpus)
+    print("bigram model created")
     #Use these vocabularies to generate values for V
     uniVocabSize = len(unigramVocab)
     biVocabSize = len(bigramVocab)
-    
-    #Ask user if they would like to use a unigram or a bigram
-    print('Type 1 for unigram probability, or type 2 for bigram probability.')
-    gramVal = input()
-    
-    #Ask the user if they would like to use unsmoothed or smoothed probability
-    print('Type 1 for unsmoothed probability, or type 2 for add-1 smoothing.')
-    smoothVal = int(input())
-    
-    #Create a model for unigrams and bigrams
-    uniModel = unigramModel(corpus, smoothVal, uniVocabSize)
-    biModel = bigramModel(corpus, smoothVal, biVocabSize)
-    
-    #Directs the program to the unigramMLE calculation
-    if (gramVal == '1'):
-        print('Enter the unigram of your choice.')
-        #Take the unigram from the user
-        unigram = input()
-        #Strip it of the newline character
-        unigram = unigram.strip()
+    print("Perplexity of testset using unigram model is:", uniPerplexity(unigramVocab, "corpustest.txt", corpus))
+    print("Perplexity of testset using bigram model is:", biPerplexity(bigramVocab, "corpustest.txt", corpus))
+    answer = "Y"
+    while(answer is not "N"):
+        #Ask user if they would like to use a unigram or a bigram
+        print('Type 1 for unigram probability, or type 2 for bigram probability.')
+        gramVal = input()
+        
+        #Ask the user if they would like to use unsmoothed or smoothed probability
+        print('Type 1 for unsmoothed probability, or type 2 for add-1 smoothing.')
+        smoothVal = int(input())
 
-        #Call on unigramMLE function
-        unigramProb = unigramMLE(unigram, corpus, smoothVal, uniVocabSize)
-        print ('The unigram probability estimate is', unigramProb)
+        #Directs the program to the unigramMLE calculation
+        if (gramVal == '1'):
+            print('Enter the unigram of your choice.')
+            #Take the unigram from the user
+            unigram = input()
+            #Strip it of the newline character
+            unigram = unigram.strip()
 
-    #Directs the program to the bigramMLE calculation
-    elif (gramVal == '2'):
-        print('Enter the bigram of your choice.')
-        #Take the bigram from the user
-        bigram = input()
-        #Strip it of the newline character
-        bigram = bigram.strip('\n')
+            #Call on unigramMLE function
+            unigramProb = unigramMLE(unigram, corpus, smoothVal, uniVocabSize)
+            print ('The unigram probability estimate is', unigramProb)
 
-        #Call on bigramMLE function
-        bigramProb = bigramMLE(bigram, corpus, smoothVal, biVocabSize)
-        print ('The bigram probability estimate is', bigramProb)
+        #Directs the program to the bigramMLE calculation
+        elif (gramVal == '2'):
+            print('Enter the bigram of your choice.')
+            #Take the bigram from the user
+            bigram = input()
+            #Strip it of the newline character
+            bigram = bigram.strip('\n')
+
+            #Call on bigramMLE function
+            bigramProb = bigramMLE(bigram, corpus, smoothVal, biVocabSize)
+            print ('The bigram probability estimate is', bigramProb)
 
 
-    #Error handling for incorrect user input
-    else:
-        print('User input not recognized.')
+        #Error handling for incorrect user input
+        else:
+            print('User input not recognized.')
+        answer = input("Do you want to keep going with the current corpus? Write \"N\" if no.")
