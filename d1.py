@@ -116,21 +116,26 @@ def bigramMLE(bigram, corpus, smoothVal, vocabLength):
     return bigramProb
 
 #Calculate perplexity of given testset using unigram model
-def uniPerplexity(uniModel, testset, corpus):
+def uniPerplexity(uniModel, testset, corpus, vocabSize):
     probabilities = []
     parsedTest = parseCorpus(testset)
     for row in range(len(parsedTest)):
         for word in range(len(parsedTest[row])):
-            probabilities.append(unigramMLE(parsedTest[row][word], corpus, 1, 0))
+            #Use smoothed probability to ensure no divide by zero
+            probabilities.append(unigramMLE(parsedTest[row][word], corpus, 2, vocabSize))
     pp = 1
     
     for probability in probabilities:
-        pp *= (1/probability)
-    return math.pow(pp, 1/(len(probabilities)))
+        pp += math.log(probability, 2)
+    
+    pp = (1 / len(probabilities)) * pp
+    pp = math.pow(1/2, pp)
+    
+    return pp
         
         
 
-def biPerplexity(biModel, testset, corpus):
+def biPerplexity(biModel, testset, corpus, vocabSize):
     probabilities = []
     parsedTest = parseCorpus(testset)
     #print(parsedTest)
@@ -138,12 +143,17 @@ def biPerplexity(biModel, testset, corpus):
         for word in range(len(parsedTest[row])-1):
             #print(word)
             #print(row)
-            probabilities.append(bigramMLE(' '.join([parsedTest[row][word], parsedTest[row][word+1]]), corpus, 1, 0))
+            #Use smoothed probability to ensure no divide by zero
+            probabilities.append(bigramMLE(' '.join([parsedTest[row][word], parsedTest[row][word+1]]), corpus, 2, vocabSize))
     pp = 1
     
     for probability in probabilities:
-        pp*=(1/probability)
-    return math.pow(pp, 1/(len(probabilities)+1))
+        pp += math.log(probability, 2)
+    
+    pp = (1 / (len(probabilities) + 1)) * pp
+    pp = math.pow(1/2, pp)
+    
+    return pp
 
 
 if __name__ == "__main__":
@@ -162,10 +172,10 @@ if __name__ == "__main__":
     #Use these vocabularies to generate values for V
     uniVocabSize = len(unigramVocab)
     biVocabSize = len(bigramVocab)
-    print("Perplexity of testset using unigram model is:", uniPerplexity(unigramVocab, "corpustest.txt", corpus))
-    print("Perplexity of testset using bigram model is:", biPerplexity(bigramVocab, "corpustest.txt", corpus))
+    print("Perplexity of testset using unigram model is:", uniPerplexity(unigramVocab, "corpustest.txt", corpus, uniVocabSize))
+    print("Perplexity of testset using bigram model is:", biPerplexity(bigramVocab, "corpustest.txt", corpus, biVocabSize))
     answer = "Y"
-    while(answer is not "N"):
+    while(answer != "N"):
         #Ask user if they would like to use a unigram or a bigram
         print('Type 1 for unigram probability, or type 2 for bigram probability.')
         gramVal = input()
