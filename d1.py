@@ -157,23 +157,25 @@ def biPerplexity(biModel, testset, corpus, vocabSize):
     
     return pp
     
-    
-def topUnigrams(corpus, unigramVocab):
-    probabilities = []
-    mostLikely = []
+#Make a list of all unigrams and there probabilities
+def unigramTuples(unigramVocab, corpus):
     list = []
-    topTen = []
-    
-    #Create a list of tuples containing unique unigrams and their probabilities
     for i in range(len(unigramVocab)):
         tup = (unigramMLE(unigramVocab[i], corpus, 1, 0), unigramVocab[i])
         list.append(tup)
+    return list
+
+#Sort and find the top ten most likely probabilities
+def topUnigrams(corpus, tuples):
+    probabilities = []
+    mostLikely = []
+    topTen = []
 
     #Sort this list in descending order by their probabilities
-    list.sort(key = operator.itemgetter(0), reverse = True)
+    tuples.sort(key = operator.itemgetter(0), reverse = True)
     
     #Place the words in order of probability into mostLikely[]
-    mostLikely = [j[1] for j in list]
+    mostLikely = [j[1] for j in tuples]
     
     for i in range(10):
         topTen.append(mostLikely[i])
@@ -181,23 +183,25 @@ def topUnigrams(corpus, unigramVocab):
     #Return the top 10 words
     return topTen
     
-    
-def topBigrams(corpus, bigramVocab):
-    probabilities = []
-    mostLikely = []
+#Create a list of the bigrams and their probabilities
+def bigramTuples(bigramVocab, corpus):
     list = []
-    topTen = []
-    
-    #Create a list of tuples containing unique bigrams and their probabilities
     for i in range(len(bigramVocab)):
         tup = (bigramMLE(bigramVocab[i], corpus, 1, 0), bigramVocab[i])
         list.append(tup)
+    return list
 
+#Sort and find the top ten most likely bigrams
+def topBigrams(corpus, tuples):
+    probabilities = []
+    mostLikely = []
+    topTen = []
+    
     #Sort this list in descending order by their probabilities
-    list.sort(key = operator.itemgetter(0), reverse = True)
+    tuples.sort(key = operator.itemgetter(0), reverse = True)
     
     #Place the phrases in order of probability into mostLikely[]
-    mostLikely = [j[1] for j in list]
+    mostLikely = [j[1] for j in tuples]
     
     for i in range(10):
         topTen.append(mostLikely[i])
@@ -206,7 +210,7 @@ def topBigrams(corpus, bigramVocab):
     return topTen
     
     
-def generateSentences(corpus, topUnigrams, unigramVocab):
+def generateSentencesuni(corpus, topUnigrams, unigramVocab):
     probabilities
     #For each new sentence:
         #Select a likely first word as "word"
@@ -218,39 +222,56 @@ def generateSentences(corpus, topUnigrams, unigramVocab):
             #Change variable "word" to this highest prob word
             #Check if sentence ahs ended
     
-    return
 
 
 if __name__ == "__main__":
+    #These are our models
+    probmodels = False
+    uniprobs = []
+    biprobs = []
+    
     #Ask the user for the filename associated with the corpus
     print('Provide the filename, with extension, to the desired corpus.')
     corpusFile = input()
     #Calls upon parseCorpus to extract the words from the corpus
     corpus = parseCorpus(corpusFile)
-    print("parsed corpus")
+    print("Parsed corpus")
     
     #Find vocabulary size
     unigramVocab = uniVocab(corpus)
-    print("unigram model created")
+    print("Unigram model created")
     bigramVocab = biVocab(corpus)
-    print("bigram model created")
+    print("Bigram model created")
     #Use these vocabularies to generate values for V
     uniVocabSize = len(unigramVocab)
     biVocabSize = len(bigramVocab)
-    print("Perplexity of testset using unigram model is:", uniPerplexity(unigramVocab, "corpustest.txt", corpus, uniVocabSize))
-    print("Perplexity of testset using bigram model is:", biPerplexity(bigramVocab, "corpustest.txt", corpus, biVocabSize))
     
-    #Calculate highest probability unigrams and bigrams, then print the top 10 for each
-    topUnigrams = topUnigrams(corpus, unigramVocab)
-    topBigrams = topBigrams(corpus, bigramVocab)
-    print("The ten most likely words in this corpus are: ", topUnigrams)
-    print("The ten most likely phrases in this corpus are: ", topBigrams)
+    #Find perplexity if the user wants to
+    ppinput = input("Do you want to calculate the perplexity of the a test set? Y/N ")
+    if (ppinput == 'Y'):
+        testset = input("What's the filename of the test set you'd like to calculate? ")
+        print("Perplexity of testset using unigram model is:", uniPerplexity(unigramVocab, testset, corpus, uniVocabSize))
+        print("Perplexity of testset using bigram model is:", biPerplexity(bigramVocab, testset, corpus, biVocabSize))
+    
+    #Calculate highest probability unigrams and bigrams if the user wants to
+    topten = input("Do you want to calculate the top ten most likely unigrams and bigrams of your corpus? Y/N ")
+    if topten == 'Y':
+        #First create probabilities list of tuples w/ words
+        uniprobs = unigramTuples(unigramVocab, corpus)
+        biprobs = bigramTuples(bigramVocab, corpus)
+        probmodels = True
+        
+        #Now find top ten
+        topUnigrams = topUnigrams(corpus, uniprobs)
+        print("The ten most likely words in this corpus are: ", topUnigrams)
+        topBigrams = topBigrams(corpus, biprobs)
+        print("The ten most likely phrases in this corpus are: ", topBigrams)
 
-    
+    #Now move onto recursive part; i.e. generating sentences and calculating MLE of data.
     answer = "Y"
     while(answer != "N"):
         #Ask user if they would like to use a unigram or a bigram
-        print('Type 1 for unigram probability, or type 2 for bigram probability.')
+        print('Type 1 for unigram MLE probability, or type 2 for bigram MLE probability.')
         gramVal = input()
         
         #Ask the user if they would like to use unsmoothed or smoothed probability
@@ -289,13 +310,25 @@ if __name__ == "__main__":
         #Ask the user if they would like to generate sentences
         print('Would you like to generate sentences using these probability estimates? Type "Y" for yes, or "N" for no.')
         sentenceChoice = input()
+        
            
         if (sentenceChoice == 'Y'):
+            sentenceAmount = input("How many sentences would you like to generate? ")
+            #If we already found our top ten, we don't need to recreate our models (since this takes a while)
+            if not probmodels:
+                uniprobs = unigramTuples(uniVocab, corpus)
+                biprobs = bigramTuples(biVocab, corpus)
+                probmodels = True
+            senttype = input("What model would you like to use to generate your sentences? Type 1 for unigrams or 2 for bigrams. ")
+            
             #Randomly generate high probability sentences from the models we created
-            generateSentences(corpus, topUnigrams, unigramVocab)
+            if senttype == '1':
+                generateSentencesuni(corpus, uniprobs, sentenceAmount)
+            elif sentype == '2':
+                generateSentencesbi(corpus, biprobs, sentenceAmount)
         
            
             
-        answer = input("Do you want to keep going with the current corpus? Write \"N\" if no, or simply press enter to continue.")
+        answer = input("Do you want to keep going with the current corpus? Write \"N\" if no, or simply press enter to continue. ")
         
         
