@@ -175,7 +175,7 @@ def topUnigrams(corpus, tuples):
     tuples.sort(key = operator.itemgetter(0), reverse = True)
     
     #Place the words in order of probability into mostLikely[]
-    mostLikely = [j[1] for j in tuples]
+    mostLikely = [j for j in tuples]
     
     for i in range(10):
         topTen.append(mostLikely[i])
@@ -201,7 +201,7 @@ def topBigrams(corpus, tuples):
     tuples.sort(key = operator.itemgetter(0), reverse = True)
     
     #Place the phrases in order of probability into mostLikely[]
-    mostLikely = [j[1] for j in tuples]
+    mostLikely = [j for j in tuples]
     
     for i in range(10):
         topTen.append(mostLikely[i])
@@ -228,16 +228,18 @@ def generateSentencesbi(corpus, biprobs, sentenceAmount):
         firstWords.append(temp[0])
         secondWords.append(temp[1])
     
-    #Get the phrases that will start each of the requested sentences
+    #Get top phrases that will start each of the requested sentences
     firstPhrases = []
     for i in range(sentenceAmount):
         firstPhrases.append(biprobs[i][1])
     
     #Algorithm for sentence generation
     for phrase in firstPhrases:
-        counter = 0
+        matches = []
+    
         #Print the first two words of the sentence
         print(phrase, end = ' ')
+        wordsUsed = 2
         
         #Before continuing to the algorithm, check if the sentence has already ended
         if '.' in phrase:
@@ -255,25 +257,47 @@ def generateSentencesbi(corpus, biprobs, sentenceAmount):
         #Continue generating new words until the sentence ends
         while (endOfSentence == False):
             #Search the firstWords[] list until the query matches the word we are using (first match will be highest probability)
+            matches = []
             for i in range(len(firstWords)):
                 query = firstWords[i]
                 #If the query is a match, use its corresponding second word as our next word and print it
                 if (query == word):
-                    print(secondWords[i], end = ' ')
-                    word = secondWords[i]
-                    counter += 1
+                    matches.append(i)
+               
+            probs = []
+            sum = 0
+            count = 0
+            #Get the sum of all probabilities to move before making weighted probabilites
+            for index in matches:
+                sum += biprobs[index][0]
+            
+            #Create list of weighted probabilities between 0 and 1 to represent probability of each bigram match
+            for index in matches:
+                probs.append((biprobs[index][0]) / sum)
+                
+            #Select random number between 0 and 1 to make word choice
+            choice = random.uniform(0, 1)
+            
+            #Check each weighted probability to see which one should be selected given our choice
+            for i in range(len(matches)):
+                if (probs[i] >= choice):
+                    print(secondWords[matches[i]], end = ' ')
+                    word = secondWords[matches[i]]
+                    wordsUsed += 1
                     break
+                    
             #After printing any word, check if it is the end of the sentence
             if '.' in word:
                 #If it contains a period, update endOfSentence and print a newline
                 endOfSentence = True
                 print('')
-            #If the sentence is stuck in a loop of repeating phrases, this will terminate it early
-            if (counter >= 20):
+            #Catches a runon sentence
+            elif (wordsUsed >= 20):
                 endOfSentence = True
                 print('.', end = '')
                 print('')
-        
+                
+
     return
     
 
@@ -322,9 +346,9 @@ if __name__ == "__main__":
         
         #Now find top ten
         topUnigrams = topUnigrams(corpus, uniprobs)
-        print("The ten most likely words in this corpus are: ", topUnigrams)
+        print("The ten most likely words in this corpus and their probabilities are: ", topUnigrams)
         topBigrams = topBigrams(corpus, biprobs)
-        print("The ten most likely phrases in this corpus are: ", topBigrams)
+        print("The ten most likely phrases in this corpus and their probabilities are: ", topBigrams)
 
     #Now move onto recursive part; i.e. generating sentences and calculating MLE of data.
     answer = "Y"
