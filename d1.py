@@ -210,17 +210,71 @@ def topBigrams(corpus, tuples):
     return topTen
     
     
-def generateSentencesuni(corpus, topUnigrams, unigramVocab):
-    probabilities
-    #For each new sentence:
-        #Select a likely first word as "word"
-        #Print the word
-        #While the sentence has not finished:
-            #For each unique unigram:
-                #Create tuples of next words and their probabilities, probabilities found with bigramMLE(' '.join([word, unigramVocab[i]]), corpus, 1, 0)
-            #Find the highest probability word and print it
-            #Change variable "word" to this highest prob word
-            #Check if sentence ahs ended
+def generateSentencesbi(corpus, biprobs, sentenceAmount):
+    #Sort the bigrams by probability
+    biprobs.sort(key = operator.itemgetter(0), reverse = True)
+    
+    #Create a list of all the bigrams in order of probability
+    bigrams = []
+    for i in range(len(biprobs)):
+        bigrams.append(biprobs[i][1])
+    
+    firstWords = []
+    secondWords = []
+    
+    #Store the first and second words of each phrase into separate lists
+    for bigram in bigrams:
+        temp = bigram.split(' ')
+        firstWords.append(temp[0])
+        secondWords.append(temp[1])
+    
+    #Get the phrases that will start each of the requested sentences
+    firstPhrases = []
+    for i in range(sentenceAmount):
+        firstPhrases.append(biprobs[i][1])
+    
+    #Algorithm for sentence generation
+    for phrase in firstPhrases:
+        counter = 0
+        #Print the first two words of the sentence
+        print(phrase, end = ' ')
+        
+        #Before continuing to the algorithm, check if the sentence has already ended
+        if '.' in phrase:
+                #If it contains a period, update endOfSentence and print a newline
+                endOfSentence = True
+                print('')
+        #If there contains no period, we can prepare to enter the while loop
+        else:
+            #Set endOfSentence to false to continue to while loop
+            endOfSentence = False
+            temp = phrase.split(' ')
+            #Let the first search word equal the second word in the phrase
+            word = temp[1]
+            
+        #Continue generating new words until the sentence ends
+        while (endOfSentence == False):
+            #Search the firstWords[] list until the query matches the word we are using (first match will be highest probability)
+            for i in range(len(firstWords)):
+                query = firstWords[i]
+                #If the query is a match, use its corresponding second word as our next word and print it
+                if (query == word):
+                    print(secondWords[i], end = ' ')
+                    word = secondWords[i]
+                    counter += 1
+                    break
+            #After printing any word, check if it is the end of the sentence
+            if '.' in word:
+                #If it contains a period, update endOfSentence and print a newline
+                endOfSentence = True
+                print('')
+            #If the sentence is stuck in a loop of repeating phrases, this will terminate it early
+            if (counter >= 20):
+                endOfSentence = True
+                print('.', end = '')
+                print('')
+        
+    return
     
 
 
@@ -250,6 +304,7 @@ if __name__ == "__main__":
     ppinput = input("Do you want to calculate the perplexity of the a test set? Y/N ")
     if (ppinput == 'Y'):
         testset = input("What's the filename of the test set you'd like to calculate? ")
+        print("Calculating perplexity of both models...")
         print("Perplexity of testset using unigram model is:", uniPerplexity(unigramVocab, testset, corpus, uniVocabSize))
         print("Perplexity of testset using bigram model is:", biPerplexity(bigramVocab, testset, corpus, biVocabSize))
     
@@ -257,8 +312,12 @@ if __name__ == "__main__":
     topten = input("Do you want to calculate the top ten most likely unigrams and bigrams of your corpus? Y/N ")
     if topten == 'Y':
         #First create probabilities list of tuples w/ words
+        print("Generating unigram pobabilities...")
         uniprobs = unigramTuples(unigramVocab, corpus)
+        print("Unigram probabilities created.")
+        print("Generating bigram probabilities...")
         biprobs = bigramTuples(bigramVocab, corpus)
+        print("Bigram probabilities created.")
         probmodels = True
         
         #Now find top ten
@@ -313,19 +372,24 @@ if __name__ == "__main__":
         
            
         if (sentenceChoice == 'Y'):
-            sentenceAmount = input("How many sentences would you like to generate? ")
+            sentenceAmount = int(input("How many sentences would you like to generate? "))
             #If we already found our top ten, we don't need to recreate our models (since this takes a while)
             if not probmodels:
-                uniprobs = unigramTuples(uniVocab, corpus)
-                biprobs = bigramTuples(biVocab, corpus)
+                print("Generating unigram probabilities...")
+                uniprobs = unigramTuples(unigramVocab, corpus)
+                print("Unigram probabilities created.")
+                print("Generating bigram probabilities...")
+                biprobs = bigramTuples(bigramVocab, corpus)
+                print("Bigram probabilities created.")
                 probmodels = True
-            senttype = input("What model would you like to use to generate your sentences? Type 1 for unigrams or 2 for bigrams. ")
+            #senttype = input("What model would you like to use to generate your sentences? Type 1 for unigrams or 2 for bigrams. ")
             
             #Randomly generate high probability sentences from the models we created
-            if senttype == '1':
-                generateSentencesuni(corpus, uniprobs, sentenceAmount)
-            elif sentype == '2':
-                generateSentencesbi(corpus, biprobs, sentenceAmount)
+            #if senttype == '1':
+                #generateSentencesuni(corpus, uniprobs, sentenceAmount)
+            #elif sentype == '2':
+            print("Generating sentences...")
+            generateSentencesbi(corpus, biprobs, sentenceAmount)
         
            
             
