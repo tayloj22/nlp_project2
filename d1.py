@@ -228,17 +228,18 @@ def generateSentencesbi(corpus, biprobs, sentenceAmount):
         firstWords.append(temp[0])
         secondWords.append(temp[1])
     
-    #Get top phrases that will start each of the requested sentences
+    #Get some of the top phrases in the corpus as our starting phrases for the sentences
     firstPhrases = []
-    for i in range(sentenceAmount):
-        firstPhrases.append(biprobs[i][1])
+    for i in range(sentenceAmount * 3):
+        if (i % 3 == 0):
+            firstPhrases.append(biprobs[i][1])
     
     #Algorithm for sentence generation
     for phrase in firstPhrases:
         matches = []
     
         #Print the first two words of the sentence
-        print(phrase, end = ' ')
+        print(phrase.capitalize(), end = ' ')
         wordsUsed = 2
         
         #Before continuing to the algorithm, check if the sentence has already ended
@@ -279,8 +280,11 @@ def generateSentencesbi(corpus, biprobs, sentenceAmount):
             choice = random.uniform(0, 1)
             
             #Check each weighted probability to see which one should be selected given our choice
+            totalWeight = 0
             for i in range(len(matches)):
-                if (probs[i] >= choice):
+                totalWeight = totalWeight + probs[i]
+                
+                if (totalWeight >= choice):
                     print(secondWords[matches[i]], end = ' ')
                     word = secondWords[matches[i]]
                     wordsUsed += 1
