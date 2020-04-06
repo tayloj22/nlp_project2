@@ -163,6 +163,7 @@ def unigramTuples(unigramVocab, corpus):
     for i in range(len(unigramVocab)):
         tup = (unigramMLE(unigramVocab[i], corpus, 1, 0), unigramVocab[i])
         list.append(tup)
+        print("Probability found for unigram \"", unigramVocab[i],"\" #", i)
     return list
 
 #Sort and find the top ten most likely probabilities
@@ -189,6 +190,7 @@ def bigramTuples(bigramVocab, corpus):
     for i in range(len(bigramVocab)):
         tup = (bigramMLE(bigramVocab[i], corpus, 1, 0), bigramVocab[i])
         list.append(tup)
+        print("Probability found for bigram \"", bigramVocab[i],"\" #", i)
     return list
 
 #Sort and find the top ten most likely bigrams
@@ -264,7 +266,10 @@ def generateSentencesbi(corpus, biprobs, sentenceAmount):
                 #If the query is a match, use its corresponding second word as our next word and print it
                 if (query == word):
                     matches.append(i)
-               
+            if(not matches):
+                print(".")
+                endOfSentence = True
+                continue
             probs = []
             sum = 0
             count = 0
@@ -321,9 +326,9 @@ if __name__ == "__main__":
     
     #Find vocabulary size
     unigramVocab = uniVocab(corpus)
-    print("Unigram model created")
+    print("Unigram model created, with", len(unigramVocab),"unique unigrams.")
     bigramVocab = biVocab(corpus)
-    print("Bigram model created")
+    print("Bigram model created, with", len(bigramVocab), "unique bigrams.")
     #Use these vocabularies to generate values for V
     uniVocabSize = len(unigramVocab)
     biVocabSize = len(bigramVocab)
@@ -350,9 +355,9 @@ if __name__ == "__main__":
         
         #Now find top ten
         topUnigrams = topUnigrams(corpus, uniprobs)
-        print("The ten most likely words in this corpus and their probabilities are: ", topUnigrams)
+        print("The ten most likely unigrams in this corpus and their probabilities are: ", topUnigrams)
         topBigrams = topBigrams(corpus, biprobs)
-        print("The ten most likely phrases in this corpus and their probabilities are: ", topBigrams)
+        print("The ten most likely bigrams in this corpus and their probabilities are: ", topBigrams)
 
     #Now move onto recursive part; i.e. generating sentences and calculating MLE of data.
     answer = "Y"
